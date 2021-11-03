@@ -7,6 +7,7 @@ import androidx.recyclerview.widget.RecyclerView
 import android.content.Intent
 import android.view.Menu
 import android.view.MenuItem
+import com.example.habittrainer.db.HabitDbTable
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -17,6 +18,8 @@ class MainActivity : AppCompatActivity() {
         val recyclerView: RecyclerView = findViewById(R.id.recycler_view)
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.setHasFixedSize(true)
+
+        recyclerView.adapter = HabitsAdapter(HabitDbTable(this).readAllHabits())
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {

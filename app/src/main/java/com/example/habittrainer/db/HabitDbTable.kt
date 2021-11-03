@@ -4,6 +4,7 @@ import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.util.Log
 import com.example.habittrainer.CreateHabitActivity
 import com.example.habittrainer.Habit
@@ -29,6 +30,40 @@ class HabitDbTable(context: Context) {
         Log.d(simpleNameTag, "Stored new habit in the db: $habit")
 
         return id
+    }
+
+    fun readAllHabits(): List<Habit> {
+        val db = dbHelper.readableDatabase
+        val columns = arrayOf(
+            HabitEntry.COL_ID,
+            HabitEntry.COL_TITLE,
+            HabitEntry.COL_DESCRIPTION,
+            HabitEntry.COL_IMAGE
+        )
+        val orderBy = "${HabitEntry.COL_ID} ASC"
+        val cursor = db.query(
+            HabitEntry.TABLE_NAME,
+            columns,
+            null,
+            null,
+            null,
+            null,
+            orderBy
+        )
+        val habits = mutableListOf<Habit>()
+
+        while(cursor.moveToNext()) {
+            val title = cursor.getString(cursor.getColumnIndexOrThrow(HabitEntry.COL_TITLE))
+            val description = cursor.getString(cursor.getColumnIndexOrThrow(HabitEntry.COL_DESCRIPTION))
+            val byteArray = cursor.getBlob(cursor.getColumnIndexOrThrow(HabitEntry.COL_IMAGE))
+            val bitmap = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
+
+            habits.add(Habit(title, description, bitmap))
+        }
+
+        cursor.close()
+
+        return habits
     }
 
     private fun toByteArray(bitmap: Bitmap): ByteArray {
