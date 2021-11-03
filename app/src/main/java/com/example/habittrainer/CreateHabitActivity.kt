@@ -2,8 +2,11 @@ package com.example.habittrainer
 
 import android.app.Activity
 import android.content.Intent
+import android.graphics.Bitmap
+import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.provider.MediaStore
 import android.util.Log
 import android.view.View
 import android.widget.EditText
@@ -11,6 +14,8 @@ import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import com.example.habittrainer.db.HabitDbTable
+import java.io.IOException
 
 class CreateHabitActivity : AppCompatActivity() {
 
@@ -18,7 +23,7 @@ class CreateHabitActivity : AppCompatActivity() {
     private var ivImage: ImageView? = null
     private var etTitle: EditText? = null
     private var etDescription: EditText? = null
-    private var imageUri: android.net.Uri? = null
+    private var imageBitmap: Bitmap? = null
     private var tvError: TextView? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -34,11 +39,15 @@ class CreateHabitActivity : AppCompatActivity() {
     private val getAction = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         result ->
 
-        if (result.resultCode == Activity.RESULT_OK) {
-            imageUri = result.data?.data
+        if (result.resultCode == Activity.RESULT_OK ) {
+            val bitmapData = result.data?.data
+            if (bitmapData != null) {
+                val bitmap = tryReadBitmap(bitmapData)
 
-            if (ivImage != null && imageUri != null) {
-                ivImage?.setImageURI(imageUri)
+                bitmap?.let {
+                    this.imageBitmap = bitmap
+                    ivImage?.setImageBitmap(bitmap)
+                }
             } else {
                 Toast.makeText(this, "Error setting media", Toast.LENGTH_LONG).show()
             }
@@ -47,6 +56,16 @@ class CreateHabitActivity : AppCompatActivity() {
             Toast.makeText(this, "Error retrieving media", Toast.LENGTH_LONG).show()
         }
     }
+
+    private fun tryReadBitmap(data: Uri): Bitmap? {
+        return try {
+            MediaStore.Images.Media.getBitmap(contentResolver, data)
+        } catch (e: IOException) {
+            e.printStackTrace()
+            null
+        }
+    }
+
 
     fun handleClickChooseImage(view: View) {
         val intent = Intent(Intent.ACTION_GET_CONTENT)
@@ -61,24 +80,52 @@ class CreateHabitActivity : AppCompatActivity() {
         Log.d(simpleNameTag, "Intent to choose image sent...")
     }
 
-    fun handleClickSave(view: View) {
-        var errorMessage: String? = null
+    private fun validateFields(): String {
+        var errorMessage = ""
 
         when {
             etTitle?.text.toString().isBlank() ->
                 errorMessage = "Error: Title missing"
             etDescription?.text.toString().isBlank() ->
                 errorMessage = "Error: Description missing"
-            imageUri == null ->
-                errorMessage = "Error: Image missing"
+            imageBitmap == null ->
+                errorMessage = "Error: ImageBitmap missing"
         }
 
-        if (errorMessage != null) {
+        return errorMessage
+    }
+
+
+    fun handleClickSave(view: View) {
+        val errorMessage = validateFields()
+
+        if (errorMessage.isNotEmpty()) {
             Log.d(simpleNameTag, errorMessage)
+            Toast.makeText(this, errorMessage, Toast.LENGTH_SHORT).show()
             errorMessageShow(errorMessage)
         } else {
-            // TODO: Save the data
-            Toast.makeText(this, "No Error", Toast.LENGTH_SHORT).show()
+            if (imageBitmap!= null) {
+                val title = etTitle?.text.toString()
+                val description = etDescription?.text.toString()
+                val habit = Habit(title, description, imageBitmap!!)
+
+                if (habit != null) {
+                    val id = HabitDbTable(this).store(habit)
+
+                    if (id == -1L) {
+                        errorMessageShow("Save failed")
+                    } else {
+                        val intent = Intent(this, MainActivity::class.java)
+
+                        Toast.makeText(this, "Saving...", Toast.LENGTH_SHORT).show()
+                        startActivity(intent)
+                    }
+                } else {
+                    Toast.makeText(this, "Image failed", Toast.LENGTH_SHORT).show()
+                }
+
+            }
+
         }
     }
 

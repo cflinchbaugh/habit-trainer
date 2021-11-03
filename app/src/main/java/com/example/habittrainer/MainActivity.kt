@@ -2,12 +2,8 @@ package com.example.habittrainer
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.widget.ImageView
-import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-
-import android.content.Context
 import android.content.Intent
 import android.view.Menu
 import android.view.MenuItem
@@ -19,12 +15,8 @@ class MainActivity : AppCompatActivity() {
 
         // Adapter -> defines data
         val recyclerView: RecyclerView = findViewById(R.id.recycler_view)
-        val habitData = Habit("", "", 0)
-        val sampleList = habitData.getSampleHabits()
-        recyclerView.adapter = HabitsAdapter(sampleList)
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.setHasFixedSize(true)
-
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
