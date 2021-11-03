@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item android:id="@+id/habit_add"
-        android:title="@string/habit_begin"
+        android:title="@string/habit_new"
         app:showAsAction="ifRoom"
     />
 </menu>
